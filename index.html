@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>讀報小海報練習</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<style>
+  :root{ --ink:#222; --bg:#f4efe4; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Noto Sans TC',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  button{font-family:inherit;cursor:pointer}
+
+  /* ---------- app chrome ---------- */
+  .app-head{padding:18px 20px 6px;max-width:1240px;margin:0 auto}
+  .app-head h1{margin:0;font-size:28px;font-weight:900;letter-spacing:1px}
+  .app-head h1 b{color:#d9452f}
+  .app-head p{margin:4px 0 0;color:#666;font-size:15px}
+  .toolbar{max-width:1240px;margin:0 auto;padding:10px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .seg{display:flex;background:#fff;border:2px solid #222;border-radius:12px;overflow:hidden}
+  .seg button{border:0;background:none;padding:9px 14px;font-size:15px;font-weight:700;color:#444}
+  .seg button + button{border-left:2px solid #222}
+  .seg button.on{background:#222;color:#fff}
+  .themes{display:flex;gap:6px;align-items:center;margin-left:4px}
+  .themes span{font-size:13px;color:#666;margin-right:2px}
+  .dot{width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #bbb}
+  .dot.on{box-shadow:0 0 0 2px #222}
+  .spacer{flex:1}
+  .btn{border:2px solid #222;background:#fff;border-radius:10px;padding:9px 14px;font-size:15px;font-weight:700}
+  .btn.primary{background:#d9452f;border-color:#d9452f;color:#fff}
+  .btn.warn{background:#fff3f0;color:#b8321e;border-color:#b8321e}
+
+  .layout{max-width:1240px;margin:0 auto;padding:6px 20px 40px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:start}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} .side{order:-1} }
+  .stage{width:100%;position:relative}
+  .scaler{transform-origin:top left;width:794px}
+  .side{background:#fff;border:2px solid #222;border-radius:14px;padding:16px;position:sticky;top:12px}
+  @media (max-width:900px){ .side{position:static} }
+  .side h2{margin:0 0 4px;font-size:19px}
+  .side .fit{font-size:14px;color:#666;margin:0 0 10px}
+  .side .focus{background:#fdf0c8;border-radius:10px;padding:8px 10px;font-size:14px;margin-bottom:14px}
+  .side h3{font-size:16px;margin:14px 0 8px;display:flex;justify-content:space-between;align-items:center}
+  .side h3 small{font-weight:700;color:#d9452f;font-size:14px}
+  .bar{height:8px;background:#eee;border-radius:9px;overflow:hidden;margin-bottom:10px}
+  .bar i{display:block;height:100%;background:#2f9c6a;width:0;transition:width .3s}
+  .chk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .chk li{display:flex;gap:10px;align-items:flex-start;padding:7px 8px;border-radius:10px;cursor:pointer}
+  .chk li:hover{background:#f6f3ec}
+  .chk .n{flex:none;width:26px;height:26px;border-radius:50%;background:#d9452f;color:#fff;font-weight:900;display:grid;place-items:center;font-size:14px}
+  .chk li.done .n{background:#2f9c6a}
+  .chk li.done .n::after{content:'✓'}
+  .chk li.done .n b{display:none}
+  .chk .t{font-weight:700;font-size:15px}
+  .chk .t em{font-style:normal;font-weight:400;font-size:12px;color:#888;margin-left:4px}
+  .chk .d{font-size:13px;color:#666;line-height:1.45}
+  .note{font-size:13px;color:#666;line-height:1.6;margin-top:12px;padding-top:10px;border-top:1px dashed #ccc}
+  .note b{color:#222}
+
+  /* ---------- poster ---------- */
+  .poster{
+    --accent:#d9452f; --soft1:#fdf0c8; --soft2:#fbe1dc; --hl:#f8cfc6; --paper:#fdfaf3;
+    width:794px;height:1123px;background:var(--paper);padding:30px 36px 22px;
+    display:flex;flex-direction:column;position:relative;overflow:hidden;
+    box-shadow:0 6px 24px rgba(0,0,0,.12);font-family:'Noto Sans TC',sans-serif;color:#222
+  }
+  .poster.blue{--accent:#2f6fd9;--soft1:#e2edfc;--soft2:#fdf0c8;--hl:#c8dbf8;--paper:#f8fbff}
+  .poster.green{--accent:#2a8f61;--soft1:#e1f3e8;--soft2:#fdf0c8;--hl:#bfe6cf;--paper:#f9fcf7}
+  .poster.purple{--accent:#7a4bc4;--soft1:#efe7fb;--soft2:#fde5ef;--hl:#ddcdf5;--paper:#fcfaff}
+  .tpl{display:none;flex-direction:column;gap:14px;flex:1;min-height:0}
+  .tpl.on{display:flex}
+
+  .ed{outline:none;white-space:pre-wrap;word-break:break-word;min-height:1.4em;border-radius:4px;transition:background .15s}
+  .ed:focus{background:rgba(255,230,120,.35)}
+  .ed.is-empty::before{content:attr(data-ph);color:#b3aca0;pointer-events:none}
+
+  .p-head{text-align:center;flex:none;position:relative}
+  .p-title{font-size:44px;font-weight:900;line-height:1.25;display:inline-block;min-width:60%;padding:0 16px;position:relative;z-index:0}
+  .p-title::after{content:'';position:absolute;left:0;right:0;bottom:4px;height:36%;background:var(--hl);border-radius:3px;z-index:-1}
+  .p-title.is-empty::before{color:#cfc7b8}
+  .p-sub{font-size:18px;color:#555;margin:6px auto 0;max-width:86%}
+  .p-head::after{content:'';display:block;width:110px;height:5px;border-radius:3px;background:var(--accent);margin:10px auto 0}
+  .slash{position:absolute;top:4px;width:30px;height:30px}
+  .slash.l{left:8px}.slash.r{right:8px;transform:scaleX(-1)}
+  .slash i{position:absolute;height:4px;border-radius:3px;background:var(--accent)}
+
+  .row{display:flex;gap:14px;min-height:0}
+  .col{display:flex;flex-direction:column;gap:14px;min-height:0;min-width:0}
+
+  .box{border:2px solid #333;border-radius:12px;background:#fff;padding:12px 15px;overflow:hidden;position:relative;
+       display:flex;flex-direction:column;gap:7px;min-height:0;min-width:0}
+  .box.s1{background:var(--soft1);border-color:transparent}
+  .box.s2{background:var(--soft2);border-color:transparent}
+  .box.over{box-shadow:0 0 0 3px #e0362c inset}
+  .box.over::after{content:'字太多囉，精簡一下 ✂';position:absolute;right:8px;bottom:6px;background:#e0362c;color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px}
+  .lbl{font-weight:900;font-size:19px;color:#222;flex:none;display:flex;align-items:center;gap:8px}
+  .lbl::before{content:'';width:6px;height:20px;border-radius:3px;background:var(--accent)}
+  .txt{font-size:15.5px;line-height:1.7}
+
+  .bul{display:flex;gap:8px;align-items:flex-start;font-size:15.5px;line-height:1.6}
+  .bul::before{content:'';flex:none;width:8px;height:8px;border-radius:50%;background:#333;margin-top:9px}
+  .bul .ed{flex:1;min-width:0}
+
+  .clip-tag{position:absolute;top:0;left:14px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:2px 10px;border-radius:0 0 8px 8px}
+  .clip{padding-top:24px}
+  .clip-head{font-size:20px;font-weight:900;line-height:1.35;border-bottom:2px solid #333;padding-bottom:6px;flex:none}
+  .clip-img{flex:none;height:42%;background:#f1ede4 center/contain no-repeat;border-radius:6px;display:none}
+  .clip.has-img .clip-img{display:block}
+  .clip-body{flex:1;min-height:0;font-size:15px;line-height:1.7}
+  .clip-src{flex:none;font-size:12.5px;color:#666;display:flex;gap:4px;border-top:1px dashed #bbb;padding-top:5px}
+  .clip-src .ed{flex:1}
+
+  .photo .ph{flex:1;min-height:0;border-radius:8px;background:#efebe2 center/cover no-repeat;position:relative;cursor:pointer;
+    display:grid;place-items:center;border:2px dashed #c9c1b1}
+  .photo.has-img .ph{border:0}
+  .ph-hint{color:#9a9182;font-size:15px;font-weight:700;text-align:center;line-height:1.6;pointer-events:none}
+  .photo.has-img .ph-hint{display:none}
+  .ph-cap{flex:none;font-size:13.5px;text-align:center;color:#444}
+
+  .tool{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2}
+  .tool button{border:1.5px solid #333;background:#fff;border-radius:8px;font-size:12px;padding:3px 8px;font-weight:700}
+  .tool button.x{display:none}
+  .has-img > .tool button.x{display:inline-block}
+
+  .cmp{display:flex;gap:0;flex:1;min-height:0}
+  .cmp > div{flex:1;display:flex;flex-direction:column;gap:6px;padding:0 12px;min-width:0}
+  .cmp > div + div{border-left:2px dashed rgba(0,0,0,.25)}
+  .cmp h4{margin:0;font-size:15px;font-weight:900;color:var(--accent)}
+
+  .q{border-radius:18px;align-items:stretch}
+  .q .lbl{font-size:20px}
+  .q .lbl::before{display:none}
+  .q .lbl span{font-size:12.5px;font-weight:700;color:#888}
+  .q .txt{font-size:15px;line-height:1.65;flex:1;min-height:0}
+  .arrow{color:var(--accent);font-size:24px;font-weight:900;text-align:center;line-height:1;flex:none}
+
+  .p-foot{flex:none;display:flex;gap:16px;justify-content:space-between;font-size:13px;color:#555;border-top:1.5px dashed #aaa;padding-top:8px;margin-top:2px}
+  .p-foot > div{display:flex;gap:4px;flex:1;min-width:0}
+  .p-foot .ed{flex:1;color:#222;font-weight:700}
+
+  /* export mode */
+  body.exporting .ed.is-empty::before{content:''}
+  body.exporting .tool,body.exporting .ph-hint{display:none !important}
+  body.exporting .photo .ph{border:0}
+  body.exporting .box.over{box-shadow:none}
+  body.exporting .box.over::after{display:none}
+  body.exporting .ed:focus{background:none}
+
+  .left{min-width:0}
+  .ex-banner{display:none;align-items:center;gap:10px;flex-wrap:wrap;background:#222;color:#fff;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:15px}
+  .ex-banner.on{display:flex}
+  .ex-banner b{color:#ffd54a}
+  .ex-banner span{flex:1;min-width:200px;line-height:1.5}
+  .ex-banner button{border:0;background:#ffd54a;color:#222;border-radius:9px;padding:8px 14px;font-weight:900;font-size:14px}
+  .btn.ex{background:#ffd54a;border-color:#222}
+  body.example .tool,body.example .ph-hint{display:none !important}
+  body.example .photo .ph{border:0;cursor:default}
+  body.example .ed:focus{background:none}
+  .ex-stamp{display:none;position:absolute;top:18px;right:-44px;transform:rotate(35deg);background:#ffd54a;color:#222;font-weight:900;font-size:18px;letter-spacing:6px;padding:6px 60px;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  body.example .ex-stamp{display:block}
+  .form{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+  .form .r{display:flex;gap:10px}
+  .form label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:700;flex:1}
+  .form input{font:inherit;font-size:16px;padding:9px 10px;border:2px solid #ccc;border-radius:9px;width:100%}
+  .form input:focus{border-color:#222;outline:none}
+  .warnbox{background:#fff3f0;color:#9c2a18;border-radius:10px;padding:9px 11px;font-size:14px;line-height:1.5;display:none}
+  .warnbox.on{display:block}
+  .okbox{background:#e6f5ec;color:#1d6b45;border-radius:10px;padding:9px 11px;font-size:14px;line-height:1.5;display:none}
+  .okbox.on{display:block}
+  .last{font-size:13px;color:#666}
+  a.btn{text-decoration:none;color:#222;display:inline-block}
+  /* modal + toast */
+  .modal{position:fixed;inset:0;background:rgba(20,18,14,.7);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal.on{display:flex}
+  .modal-card{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:96vh;display:flex;flex-direction:column;overflow:hidden}
+  .modal-card header{padding:14px 16px;border-bottom:1px solid #eee}
+  .modal-card header b{font-size:17px}
+  .modal-card header p{margin:4px 0 0;font-size:14px;color:#555;line-height:1.5}
+  .modal-card .imgwrap{overflow:auto;background:#eee;padding:12px;flex:1;min-height:0}
+  .modal-card img{width:100%;display:block;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+  .modal-card footer{padding:12px 16px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid #eee}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;opacity:0;transition:.25s;z-index:60;pointer-events:none}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="app-head">
+  <h1>讀什麼<b>報</b>啊？小海報練習</h1>
+  <p>選一種版型 → 直接在海報上點一下就能打字、放照片 → 完成後存成圖片交作業。</p>
+</div>
+
+<div class="toolbar">
+  <div class="seg" id="tplSeg">
+    <button data-tpl="t1" class="on">① 主題聚焦型</button>
+    <button data-tpl="t2">② 圖文對照型</button>
+    <button data-tpl="t3">③ 議題整理型</button>
+  </div>
+  <div class="themes" id="themes">
+    <span>配色</span>
+    <button class="dot on" data-theme="" style="background:#d9452f" aria-label="紅"></button>
+    <button class="dot" data-theme="blue" style="background:#2f6fd9" aria-label="藍"></button>
+    <button class="dot" data-theme="green" style="background:#2a8f61" aria-label="綠"></button>
+    <button class="dot" data-theme="purple" style="background:#7a4bc4" aria-label="紫"></button>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn ex" id="exBtn">👀 看範例</button>
+  <button class="btn" id="clearBtn">清空這張</button>
+  <button class="btn" id="exportBtn">存成圖片</button>
+  <button class="btn primary" id="submitBtn">📤 繳交作業</button>
+</div>
+
+<div class="layout">
+  <div class="left">
+  <div class="ex-banner" id="exBanner"><span>📖 這是<b id="exName"></b>的範例海報，看完可以照著這個方式寫自己的。（你的作品不會被覆蓋）</span><button id="exBack">回到我的海報 ✏️</button></div>
+  <div class="stage" id="stage">
+    <div class="scaler" id="scaler">
+      <div class="poster" id="poster">
+        <div class="ex-stamp">範例</div>
+
+        <!-- ============ T1 主題聚焦型 ============ -->
+        <section class="tpl on" id="t1">
+          <div class="p-head">
+            <div class="slash l"><i style="width:22px;left:4px;top:6px;transform:rotate(45deg)"></i><i style="width:16px;left:0;top:20px;transform:rotate(20deg)"></i></div>
+            <div class="slash r"><i style="width:22px;left:4px;top:6px;transform:rotate(45deg)"></i><i style="width:16px;left:0;top:20px;transform:rotate(20deg)"></i></div>
+            <div class="ed p-title" data-k="title" data-el="1" data-single data-ph="主標題"></div>
+            <div class="ed p-sub" data-k="sub" data-el="2" data-single data-ph="副標題：用一句話說明方向或補充"></div>
+          </div>
+          <div class="row" style="flex:1.55">
+            <div class="box clip" style="flex:1.3" data-imgbox="clip">
+              <div class="clip-tag">新聞剪報</div>
+              <div class="tool"><button data-up>📷 貼剪報照片</button><button class="x" data-rm>✕</button></div>
+              <div class="ed clip-head" data-k="ch" data-el="3" data-ph="新聞標題（照抄報紙上的標題）"></div>
+              <div class="clip-img"></div>
+              <div class="ed clip-body" data-k="cb" data-el="3" data-ph="新聞主要內容：誰？在什麼時候、什麼地方？發生了什麼事？"></div>
+              <div class="clip-src">出處：<div class="ed" data-k="cs" data-single data-ph="報紙名稱／日期／版次"></div></div>
+            </div>
+            <div class="box photo" style="flex:1" data-imgbox="photo" data-el="4">
+              <div class="lbl">照片／圖片</div>
+              <div class="tool"><button class="x" data-rm>✕ 移除</button></div>
+              <div class="ph" data-up><div class="ph-hint">＋ 點這裡放照片<br><small>報紙原有的圖片，或與主題相關的圖片</small></div></div>
+              <div class="ed ph-cap" data-k="cap" data-single data-ph="圖說：這張圖在說什麼？"></div>
+            </div>
+          </div>
+          <div class="row" style="flex:1">
+            <div class="box s1" style="flex:1">
+              <div class="lbl">重點整理</div>
+              <div class="bul"><div class="ed" data-k="k1" data-el="5" data-ph="重點一（用自己的話寫）"></div></div>
+              <div class="bul"><div class="ed" data-k="k2" data-el="5" data-ph="重點二"></div></div>
+              <div class="bul"><div class="ed" data-k="k3" data-el="5" data-ph="重點三"></div></div>
+            </div>
+            <div class="box s2" style="flex:1">
+              <div class="lbl">我的想法</div>
+              <div class="ed txt" style="flex:1" data-k="th" data-el="6" data-ph="讀完後我發現……&#10;我想問……&#10;這讓我想到生活中的……"></div>
+            </div>
+          </div>
+          <div class="p-foot">
+            <div>班級座號姓名：<span class="ed" data-k="nm" data-single data-ph="　"></span></div>
+          </div>
+        </section>
+
+        <!-- ============ T2 圖文對照型 ============ -->
+        <section class="tpl" id="t2">
+          <div class="p-head">
+            <div class="slash l"><i style="width:22px;left:4px;top:6px;transform:rotate(45deg)"></i><i style="width:16px;left:0;top:20px;transform:rotate(20deg)"></i></div>
+            <div class="slash r"><i style="width:22px;left:4px;top:6px;transform:rotate(45deg)"></i><i style="width:16px;left:0;top:20px;transform:rotate(20deg)"></i></div>
+            <div class="ed p-title" data-k="title" data-el="1" data-single data-ph="共同主題"></div>
+            <div class="ed p-sub" data-k="sub" data-el="2" data-single data-ph="副標題：這幾則新聞都和什麼有關？"></div>
+          </div>
+          <div class="row" style="flex:1.6">
+            <div class="col" style="flex:1.25">
+              <div class="box clip" style="flex:1" data-imgbox="clip1">
+                <div class="clip-tag">新聞剪報 ①</div>
+                <div class="tool"><button data-up>📷 貼剪報照片</button><button class="x" data-rm>✕</button></div>
+                <div class="ed clip-head" data-k="c1h" data-el="3" data-g="a" data-ph="新聞①的標題"></div>
+                <div class="clip-img"></div>
+                <div class="ed clip-body" data-k="c1b" data-el="3" data-g="a" data-ph="重要內容（人事時地物）"></div>
+                <div class="clip-src">出處：<div class="ed" data-k="c1s" data-single data-ph="報紙名稱／日期／版次"></div></div>
+              </div>
+              <div class="box clip" style="flex:1" data-imgbox="clip2">
+                <div class="clip-tag">新聞剪報 ②</div>
+                <div class="tool"><button data-up>📷 貼剪報照片</button><button class="x" data-rm>✕</button></div>
+                <div class="ed clip-head" data-k="c2h" data-el="3" data-g="b" data-ph="新聞②的標題"></div>
+                <div class="clip-img"></div>
+                <div class="ed clip-body" data-k="c2b" data-el="3" data-g="b" data-ph="重要內容（人事時地物）"></div>
+                <div class="clip-src">出處：<div class="ed" data-k="c2s" data-single data-ph="報紙名稱／日期／版次"></div></div>
+              </div>
+            </div>
+            <div class="box photo" style="flex:1" data-imgbox="photo" data-el="4">
+              <div class="lbl">照片／圖片</div>
+              <div class="tool"><button class="x" data-rm>✕ 移除</button></div>
+              <div class="ph" data-up><div class="ph-hint">＋ 點這裡放照片<br><small>與共同主題相關的圖片</small></div></div>
+              <div class="ed ph-cap" data-k="cap" data-single data-ph="圖說：這張圖在說什麼？"></div>
+            </div>
+          </div>
+          <div class="box s2" style="flex:0.78">
+            <div class="lbl">比較與關聯</div>
+            <div class="cmp">
+              <div>
+                <h4>相同之處</h4>
+                <div class="bul"><div class="ed" data-k="s1" data-el="5" data-g="same" data-ph="兩則新聞都……"></div></div>
+                <div class="bul"><div class="ed" data-k="s2" data-el="5" data-g="same" data-ph="　"></div></div>
+              </div>
+              <div>
+                <h4>不同之處</h4>
+                <div class="bul"><div class="ed" data-k="d1" data-el="5" data-g="diff" data-ph="新聞①……，但新聞②……"></div></div>
+                <div class="bul"><div class="ed" data-k="d2" data-el="5" data-g="diff" data-ph="　"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="box s1" style="flex:0.55">
+            <div class="lbl">我的發現或想法</div>
+            <div class="ed txt" style="flex:1" data-k="th" data-el="6" data-ph="把兩則新聞放在一起看，我發現……"></div>
+          </div>
+          <div class="p-foot">
+            <div>班級座號姓名：<span class="ed" data-k="nm" data-single data-ph="　"></span></div>
+          </div>
+        </section>
+
+        <!-- ============ T3 議題整理型 ============ -->
+        <section class="tpl" id="t3">
+          <div class="p-head">
+            <div class="slash l"><i style="width:22px;left:4px;top:6px;transform:rotate(45deg)"></i><i style="width:16px;left:0;top:20px;transform:rotate(20deg)"></i></div>
+            <div class="slash r"><i style="width:22px;left:4px;top:6px;transform:rotate(45deg)"></i><i style="width:16px;left:0;top:20px;transform:rotate(20deg)"></i></div>
+            <div class="ed p-title" data-k="title" data-el="1" data-single data-ph="議題標題"></div>
+            <div class="ed p-sub" data-k="sub" data-el="2" data-single data-ph="副標題：這個議題為什麼值得關心？"></div>
+          </div>
+          <div class="row" style="flex:1.8">
+            <div class="col" style="flex:1">
+              <div class="box q" style="flex:1">
+                <div class="lbl">事件 <span>發生了什麼？</span></div>
+                <div class="ed txt" data-k="qa" data-el="5" data-g="a" data-ph="用兩三句話說清楚：誰、何時、何地、發生什麼事"></div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box q" style="flex:1">
+                <div class="lbl">原因 <span>為什麼會發生？</span></div>
+                <div class="ed txt" data-k="qb" data-el="5" data-g="b" data-ph="新聞裡提到的原因是……"></div>
+              </div>
+            </div>
+            <div class="col" style="flex:1.35">
+              <div class="box clip" style="flex:1.25" data-imgbox="clip">
+                <div class="clip-tag">新聞剪報（事件概要）</div>
+                <div class="tool"><button data-up>📷 貼剪報照片</button><button class="x" data-rm>✕</button></div>
+                <div class="ed clip-head" data-k="ch" data-el="3" data-ph="新聞標題"></div>
+                <div class="clip-img"></div>
+                <div class="ed clip-body" data-k="cb" data-el="3" data-ph="事件概要"></div>
+                <div class="clip-src">出處：<div class="ed" data-k="cs" data-single data-ph="報紙名稱／日期／版次"></div></div>
+              </div>
+              <div class="box photo" style="flex:1" data-imgbox="photo" data-el="4">
+                <div class="tool"><button class="x" data-rm>✕ 移除</button></div>
+                <div class="ph" data-up><div class="ph-hint">＋ 點這裡放照片</div></div>
+                <div class="ed ph-cap" data-k="cap" data-single data-ph="圖說"></div>
+              </div>
+            </div>
+            <div class="col" style="flex:1">
+              <div class="box q" style="flex:1">
+                <div class="lbl">影響 <span>帶來哪些改變？</span></div>
+                <div class="ed txt" data-k="qc" data-el="5" data-g="c" data-ph="對誰有影響？好的、壞的影響各是什麼？"></div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box q" style="flex:1">
+                <div class="lbl">延伸 <span>我們可以怎麼做？</span></div>
+                <div class="ed txt" data-k="qd" data-el="5" data-g="d" data-ph="我、學校或社會可以……"></div>
+              </div>
+            </div>
+          </div>
+          <div class="box s1" style="flex:0.62">
+            <div class="lbl">我的觀察與想法</div>
+            <div class="bul"><div class="ed" data-k="o1" data-el="6" data-ph="我觀察到……"></div></div>
+            <div class="bul"><div class="ed" data-k="o2" data-el="6" data-ph="我的疑問是……"></div></div>
+            <div class="bul"><div class="ed" data-k="o3" data-el="6" data-ph="我認為……，因為……"></div></div>
+          </div>
+          <div class="p-foot">
+            <div>班級座號姓名：<span class="ed" data-k="nm" data-single data-ph="　"></span></div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <aside class="side">
+    <h2 id="sName">主題聚焦型</h2>
+    <p class="fit" id="sFit">適合一篇主要新聞</p>
+    <div class="focus"><b>閱讀重點：</b><span id="sFocus"></span></div>
+    <h3>海報的六個基本元素 <small id="sCount">0 / 6</small></h3>
+    <div class="bar"><i id="sBar"></i></div>
+    <ul class="chk" id="chk"></ul>
+    <div class="note">
+      <b>小提醒</b><br>
+      ・點清單上的項目，會直接跳到要寫的地方。<br>
+      ・框框變紅色＝字太多，試著刪掉不重要的字。<br>
+      ・重點整理要用<b>自己的話</b>，不要整段抄。<br>
+      ・寫的內容會自動存在這台電腦的瀏覽器裡。
+    </div>
+  </aside>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <header>
+      <b>海報圖片做好了！</b>
+      <p>按「下載」，或在圖片上按<b>右鍵 →「另存圖片」</b>。<br>平板／手機：<b>長按圖片</b> → 儲存或分享。</p>
+    </header>
+    <div class="imgwrap"><img id="outImg" alt="海報圖片"></div>
+    <footer>
+      <a class="btn" id="dlBtn" download="讀報海報.png" href="#">⬇ 下載</a>
+      <button class="btn" id="copyBtn">複製圖片</button>
+      <button class="btn primary" id="closeBtn">關閉</button>
+    </footer>
+  </div>
+</div>
+<div class="modal" id="subModal">
+  <div class="modal-card">
+    <header>
+      <b>📤 繳交作業</b>
+      <p>填好班級、座號、姓名，海報會直接傳給老師。</p>
+    </header>
+    <div class="form">
+      <div class="r">
+        <label>班級<input id="fClass" inputmode="numeric" placeholder="例：703" maxlength="10"></label>
+        <label>座號<input id="fSeat" inputmode="numeric" placeholder="例：12" maxlength="4"></label>
+      </div>
+      <label>姓名<input id="fName" placeholder="例：王小明" maxlength="20"></label>
+      <div class="warnbox" id="subWarn"></div>
+      <div class="okbox" id="subOk"></div>
+      <div class="last" id="subLast"></div>
+    </div>
+    <footer>
+      <button class="btn" id="subCancel">取消</button>
+      <button class="btn primary" id="subGo">確定繳交</button>
+    </footer>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="file" accept="image/*" hidden>
+
+<script>
+/* ============================================================
+   ★ 老師設定：把 Apps Script「網頁應用程式」網址貼在下面引號裡
+   例：const SUBMIT_URL = 'https://script.google.com/macros/s/AKfy.../exec';
+   ============================================================ */
+const SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbzJ2yIXP_Q21G_z0Eksp5nDpTjno7S7qK8x3fs_hs7NHyKIJOa1dpD_K8dZ9f0cGoyM/exec';
+
+(() => {
+  const STORE = 'readpaper-poster-v1';
+  const INFO = {
+    t1:{name:'主題聚焦型',fit:'適合一篇主要新聞',focus:'讀懂一篇新聞，整理核心訊息。',
+        five:['重點整理','用自己的話寫出重要訊息。'],six:['我的想法','寫下閱讀後的發現、疑問、感受或生活連結。']},
+    t2:{name:'圖文對照型',fit:'適合兩至三篇相關新聞',focus:'比較、連結不同新聞資訊。',
+        five:['比較與關聯','找出兩則新聞的相同與不同之處。'],six:['我的發現或想法','把新聞放在一起看，你發現了什麼？']},
+    t3:{name:'議題整理型',fit:'適合有思考延伸的新聞主題',focus:'從新聞內容進一步理解議題。',
+        five:['事件・原因・影響・延伸','四個框都要寫，想一想事情的來龍去脈。'],six:['我的觀察與想法','寫下觀察、疑問和自己的看法。']}
+  };
+  const BASE = [
+    ['主標題','讓人一看就知道海報的主題。'],
+    ['副標題','用一句話說明方向或補充。'],
+    ['新聞剪報','保留報紙的標題與重要內容，記得寫出處。'],
+    ['圖片／照片','報紙原有的圖片，或與主題相關的圖片。']
+  ];
+
+  let state = {tpl:'t1', theme:'', data:{}, imgs:{}};
+  try { const s = JSON.parse(localStorage.getItem(STORE)); if (s && s.data) state = Object.assign(state, s); } catch(e){}
+
+  let exMode = false;
+  const $ = s => document.querySelector(s);
+  const poster = $('#poster'), scaler = $('#scaler'), stage = $('#stage');
+  const plainOK = (() => { const d=document.createElement('div'); try{ d.contentEditable='plaintext-only'; }catch(e){} return d.contentEditable==='plaintext-only'; })();
+
+  /* ----- fields ----- */
+  const fields = [...document.querySelectorAll('.ed')];
+  fields.forEach(el => {
+    const tpl = el.closest('.tpl').id;
+    el.dataset.key = tpl + ':' + el.dataset.k;
+    el.contentEditable = plainOK ? 'plaintext-only' : 'true';
+    el.spellcheck = false;
+    const v = state.data[el.dataset.key];
+    if (v) el.innerText = v;
+    markEmpty(el);
+    el.addEventListener('input', () => { markEmpty(el); state.data[el.dataset.key] = el.innerText.replace(/\n+$/,''); save(); refresh(); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' && el.hasAttribute('data-single')) e.preventDefault(); });
+    el.addEventListener('paste', e => {
+      e.preventDefault();
+      let t = (e.clipboardData || window.clipboardData).getData('text');
+      if (el.hasAttribute('data-single')) t = t.replace(/\s*\n\s*/g,' ');
+      document.execCommand('insertText', false, t);
+    });
+  });
+  function markEmpty(el){ el.classList.toggle('is-empty', el.innerText.trim()===''); }
+
+  /* ----- images ----- */
+  const fileIn = $('#file'); let target = null;
+  document.querySelectorAll('[data-imgbox]').forEach(box => {
+    box.dataset.key = box.closest('.tpl').id + ':' + box.dataset.imgbox;
+    paintImg(box);
+    box.querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', () => { target = box; fileIn.value=''; fileIn.click(); }));
+    box.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); delete state.imgs[box.dataset.key]; paintImg(box); save(); refresh(); }));
+    box.addEventListener('dragover', e => e.preventDefault());
+    box.addEventListener('drop', e => { e.preventDefault(); const f=e.dataTransfer.files[0]; if (f && f.type.startsWith('image/')) { target=box; loadFile(f); } });
+  });
+  fileIn.addEventListener('change', () => { if (fileIn.files[0] && target) loadFile(fileIn.files[0]); });
+  function loadFile(f){
+    const r = new FileReader();
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1400, k = Math.min(1, max/Math.max(img.width,img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+        const g = c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height);
+        state.imgs[target.dataset.key] = c.toDataURL('image/jpeg', .85);
+        paintImg(target); save(); refresh();
+      };
+      img.src = r.result;
+    };
+    r.readAsDataURL(f);
+  }
+  function paintImg(box){
+    const src = getImg(box.dataset.key);
+    const layer = box.querySelector('.clip-img') || box.querySelector('.ph');
+    box.classList.toggle('has-img', !!src);
+    layer.style.backgroundImage = src ? `url("${src}")` : '';
+  }
+
+  /* ----- template & theme ----- */
+  document.querySelectorAll('#tplSeg button').forEach(b => b.addEventListener('click', () => { state.tpl = b.dataset.tpl; save(); applyTpl(); }));
+  document.querySelectorAll('#themes .dot').forEach(b => b.addEventListener('click', () => { state.theme = b.dataset.theme; save(); applyTheme(); }));
+  function applyTpl(){
+    document.querySelectorAll('#tplSeg button').forEach(b => b.classList.toggle('on', b.dataset.tpl===state.tpl));
+    document.querySelectorAll('.tpl').forEach(t => t.classList.toggle('on', t.id===state.tpl));
+    const i = INFO[state.tpl];
+    if (exMode) renderExample();
+    $('#sName').textContent = i.name; $('#sFit').textContent = i.fit; $('#sFocus').textContent = i.focus;
+    refresh();
+  }
+  function applyTheme(){
+    poster.classList.remove('blue','green','purple'); if (state.theme) poster.classList.add(state.theme);
+    document.querySelectorAll('#themes .dot').forEach(b => b.classList.toggle('on', b.dataset.theme===state.theme));
+  }
+
+  /* ----- checklist & overflow ----- */
+  function refresh(){
+    const tpl = $('#'+state.tpl), i = INFO[state.tpl];
+    const items = [...BASE, i.five, i.six];
+    let done = 0; const ul = $('#chk'); ul.innerHTML = '';
+    items.forEach((it, idx) => {
+      const n = idx+1;
+      let groups = {};
+      tpl.querySelectorAll(`.ed[data-el="${n}"]`).forEach(el => { const g = el.dataset.g || '_'; groups[g] = groups[g] || el.innerText.trim()!==''; });
+      tpl.querySelectorAll(`[data-imgbox][data-el="${n}"]`).forEach(b => { groups['img'] = !!getImg(b.dataset.key); });
+      if (n===3) tpl.querySelectorAll('.clip').forEach((b,j) => { const gk = j===0 ? (tpl.id==='t2'?'a':'_') : 'b'; if (getImg(b.dataset.key)) groups[gk] = true; });
+      const keys = Object.keys(groups), ok = keys.filter(k => groups[k]).length;
+      const isDone = keys.length>0 && ok===keys.length; if (isDone) done++;
+      const li = document.createElement('li'); if (isDone) li.className='done';
+      li.innerHTML = `<div class="n"><b>${n}</b></div><div><div class="t">${it[0]}${keys.length>1?`<em>${ok}/${keys.length}</em>`:''}</div><div class="d">${it[1]}</div></div>`;
+      li.addEventListener('click', () => {
+        const target = [...tpl.querySelectorAll(`.ed[data-el="${n}"]`)].find(el => el.innerText.trim()==='') || tpl.querySelector(`.ed[data-el="${n}"]`);
+        if (n===4){ const pb = tpl.querySelector('[data-imgbox][data-el="4"]'); pb.scrollIntoView({behavior:'smooth',block:'center'}); if (!exMode && !getImg(pb.dataset.key)) { target = pb; fileIn.value=''; fileIn.click(); } return; }
+        if (target){ target.scrollIntoView({behavior:'smooth',block:'center'}); if (!exMode) setTimeout(()=>target.focus({preventScroll:true}),250); }
+      });
+      ul.appendChild(li);
+    });
+    $('#sCount').textContent = `${done} / 6`;
+    $('#sBar').style.width = (done/6*100)+'%';
+    requestAnimationFrame(checkOverflow);
+  }
+
+  function checkOverflow(){
+    $('#'+state.tpl).querySelectorAll('.box').forEach(b => b.classList.toggle('over', b.scrollHeight > b.clientHeight + 2));
+  }
+
+  /* ----- storage ----- */
+  let saveT, warned = false;
+  function save(){
+    clearTimeout(saveT);
+    saveT = setTimeout(() => {
+      try { localStorage.setItem(STORE, JSON.stringify(state)); }
+      catch(e){ if (!warned){ toast('照片太大，無法自動儲存；記得完成後存成圖片'); warned = true; } }
+    }, 300);
+  }
+
+  /* ----- fit to screen ----- */
+  function fit(){
+    const s = Math.min(1, stage.clientWidth / 794);
+    scaler.style.transform = `scale(${s})`;
+    stage.style.height = (1123*s) + 'px';
+  }
+  new ResizeObserver(fit).observe(stage);
+
+  /* ----- clear ----- */
+  let clearArm = null;
+  $('#clearBtn').addEventListener('click', () => {
+    if (exMode){ toast('現在是範例，先按「回到我的海報」'); return; }
+    const b = $('#clearBtn');
+    if (!clearArm){ b.classList.add('warn'); b.textContent = '再按一次確定清空'; clearArm = setTimeout(()=>{ clearArm=null; b.classList.remove('warn'); b.textContent='清空這張'; }, 3000); return; }
+    clearTimeout(clearArm); clearArm = null; b.classList.remove('warn'); b.textContent='清空這張';
+    const p = state.tpl + ':';
+    Object.keys(state.data).forEach(k => { if (k.startsWith(p) && !k.endsWith(':nm')) delete state.data[k]; });
+    Object.keys(state.imgs).forEach(k => { if (k.startsWith(p)) delete state.imgs[k]; });
+    fields.forEach(el => { if (el.dataset.key.startsWith(p) && el.dataset.k!=='nm'){ el.innerText=''; markEmpty(el); } });
+    document.querySelectorAll('[data-imgbox]').forEach(paintImg);
+    save(); refresh(); toast('已清空（姓名保留）');
+  });
+
+  /* ----- export ----- */
+  $('#exportBtn').addEventListener('click', async () => {
+    if (exMode){ toast('範例不能交作業喔！先按「回到我的海報」'); return; }
+    if (!window.html2canvas){ toast('圖片工具還在載入，請稍候再按一次'); return; }
+    const b = $('#exportBtn'); b.disabled = true; b.textContent = '製作中…';
+    try {
+      const canvas = await makeCanvas();
+      lastCanvas = canvas;
+      const url = canvas.toDataURL('image/png');
+      $('#outImg').src = url;
+      $('#dlBtn').href = url;
+      $('#dlBtn').download = '讀報海報-' + INFO[state.tpl].name + '.png';
+      $('#modal').classList.add('on');
+    } catch(e){ toast('製作失敗，請再試一次'); }
+    b.disabled = false; b.textContent = '存成圖片';
+  });
+  async function makeCanvas(){
+    if (document.activeElement) document.activeElement.blur();
+    document.body.classList.add('exporting');
+    scaler.style.transform = 'none';
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      return await html2canvas(poster, {scale:2, backgroundColor:'#ffffff', logging:false, scrollX:-window.scrollX, scrollY:-window.scrollY});
+    } finally {
+      document.body.classList.remove('exporting');
+      fit(); checkOverflow();
+    }
+  }
+
+  /* ----- submit to teacher ----- */
+  const subModal = $('#subModal');
+  function doneCount(){ return parseInt(($('#sCount').textContent||'0').split('/')[0]) || 0; }
+  $('#submitBtn').addEventListener('click', () => {
+    if (exMode){ toast('範例不能交作業喔！先按「回到我的海報」'); return; }
+    const st = state.student || {};
+    $('#fClass').value = st.klass || ''; $('#fSeat').value = st.seat || ''; $('#fName').value = st.name || '';
+    $('#subOk').classList.remove('on');
+    const w = $('#subWarn'), left = 6 - doneCount();
+    if (!SUBMIT_URL){ w.innerHTML = '老師還沒設定收件網址，現在無法繳交。<br>可以先按「存成圖片」保存作品。'; w.classList.add('on'); }
+    else if (left > 0){ w.textContent = `六個基本元素還有 ${left} 項沒完成，確定要交了嗎？（可以先取消，回去補完）`; w.classList.add('on'); }
+    else { w.classList.remove('on'); }
+    const sub = state.submitted && state.submitted[state.tpl];
+    $('#subLast').textContent = sub ? `你在 ${sub} 交過這一型；再交一次，老師會收到新的版本。` : '';
+    $('#subGo').disabled = !SUBMIT_URL; $('#subGo').textContent = '確定繳交';
+    subModal.classList.add('on');
+    setTimeout(() => (st.name ? $('#subGo') : $('#fClass')).focus(), 50);
+  });
+  $('#subCancel').addEventListener('click', () => subModal.classList.remove('on'));
+  subModal.addEventListener('click', e => { if (e.target === subModal) subModal.classList.remove('on'); });
+  $('#subGo').addEventListener('click', async () => {
+    const klass = $('#fClass').value.trim(), seat = $('#fSeat').value.trim(), name = $('#fName').value.trim();
+    const w = $('#subWarn');
+    if (!klass || !seat || !name){ w.textContent = '請填好班級、座號和姓名。'; w.classList.add('on'); return; }
+    state.student = {klass, seat, name}; save();
+    // 把班級座號姓名寫到海報底部
+    const nmEl = $('#'+state.tpl+' [data-k="nm"]');
+    nmEl.innerText = `${klass}班 ${seat}號 ${name}`; markEmpty(nmEl); state.data[nmEl.dataset.key] = nmEl.innerText;
+    const go = $('#subGo'); go.disabled = true; go.textContent = '傳送中…'; w.classList.remove('on');
+    try {
+      if (!window.html2canvas) throw new Error('圖片工具還在載入');
+      const canvas = await makeCanvas();
+      const image = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+      const texts = {};
+      $('#'+state.tpl).querySelectorAll('.ed').forEach(el => { const v = el.innerText.trim(); if (v) texts[el.dataset.k] = v; });
+      const payload = {klass, seat, name, tpl: state.tpl, tplName: INFO[state.tpl].name, done: doneCount(), texts, image};
+      const res = await fetch(SUBMIT_URL, {method:'POST', body: JSON.stringify(payload)});
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || '伺服器沒有回應');
+      const t = new Date().toLocaleString('zh-TW', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false});
+      state.submitted = state.submitted || {}; state.submitted[state.tpl] = t; save();
+      $('#subOk').innerHTML = `✅ 繳交成功！（${t}）<br>老師已經收到你的海報。`; $('#subOk').classList.add('on');
+      $('#subLast').textContent = '';
+      go.textContent = '已繳交'; 
+      setTimeout(() => { subModal.classList.remove('on'); toast('✅ 繳交成功！'); }, 1800);
+    } catch(e){
+      w.innerHTML = '繳交失敗：' + (e.message || '網路錯誤') + '<br>請檢查網路後再按一次；一直失敗就先「存成圖片」交給老師。';
+      w.classList.add('on'); go.disabled = false; go.textContent = '再試一次';
+    }
+  });
+  let lastCanvas = null;
+  $('#closeBtn').addEventListener('click', () => $('#modal').classList.remove('on'));
+  $('#modal').addEventListener('click', e => { if (e.target.id==='modal') $('#modal').classList.remove('on'); });
+  $('#copyBtn').addEventListener('click', () => {
+    if (!lastCanvas || !navigator.clipboard || !window.ClipboardItem){ toast('這台裝置不支援複製，請用右鍵或長按儲存'); return; }
+    lastCanvas.toBlob(async blob => {
+      try { await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]); toast('已複製，可以貼到 Classroom 或簡報'); }
+      catch(e){ toast('無法複製，請用右鍵或長按儲存'); }
+    });
+  });
+
+
+  /* ----- examples ----- */
+  const svg = body => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">${body}</svg>`);
+  const IMG_CUP = svg(`<rect width="400" height="400" fill="#dff1e6"/><circle cx="320" cy="80" r="40" fill="#fff3b0"/>
+    <path d="M60 330 Q200 300 340 330 L340 400 L60 400Z" fill="#b9dfc6"/>
+    <rect x="236" y="70" width="10" height="110" rx="4" fill="#d9452f" transform="rotate(12 241 125)"/>
+    <path d="M140 150 L260 150 L245 330 Q200 345 155 330 Z" fill="#fff" stroke="#333" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="130" y="135" width="140" height="22" rx="8" fill="#2a8f61" stroke="#333" stroke-width="6"/>
+    <path d="M152 200 L248 200 L240 300 Q200 312 160 300Z" fill="#c98b56"/>
+    <circle cx="180" cy="285" r="7" fill="#4a2e1c"/><circle cx="205" cy="292" r="7" fill="#4a2e1c"/><circle cx="225" cy="282" r="7" fill="#4a2e1c"/>
+    <path d="M200 235 q22 -26 40 -6 q-16 22 -40 6z" fill="#2a8f61"/><path d="M200 235 l26 -14" stroke="#fff" stroke-width="3"/>
+    <g transform="translate(40 210)"><path d="M10 60 L40 60 L36 110 L14 110Z" fill="#eee" stroke="#aaa" stroke-width="4"/><line x1="0" y1="0" x2="60" y2="130" stroke="#d9452f" stroke-width="8"/><line x1="60" y1="0" x2="0" y2="130" stroke="#d9452f" stroke-width="8"/></g>`);
+  const IMG_SUN = svg(`<rect width="400" height="400" fill="#ffe7c2"/>
+    <g stroke="#f2994a" stroke-width="10" stroke-linecap="round">${[...Array(12)].map((_,i)=>{const a=i*Math.PI/6;return `<line x1="${130+Math.cos(a)*70}" y1="${120+Math.sin(a)*70}" x2="${130+Math.cos(a)*100}" y2="${120+Math.sin(a)*100}"/>`}).join('')}</g>
+    <circle cx="130" cy="120" r="55" fill="#ffc94a" stroke="#f2994a" stroke-width="6"/>
+    <rect x="0" y="290" width="400" height="110" fill="#e9a36b"/><ellipse cx="200" cy="345" rx="170" ry="38" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="18 12"/>
+    <path d="M230 300 L230 240 L380 240 L380 300" fill="none" stroke="#333" stroke-width="6"/><path d="M215 245 L395 245 L380 215 L230 215Z" fill="#2f6fd9" stroke="#333" stroke-width="6" stroke-linejoin="round"/>
+    <g transform="translate(300 40)"><rect x="0" y="0" width="34" height="150" rx="17" fill="#fff" stroke="#333" stroke-width="6"/><circle cx="17" cy="165" r="28" fill="#e0362c" stroke="#333" stroke-width="6"/><rect x="10" y="30" width="14" height="130" rx="7" fill="#e0362c"/>
+    <g stroke="#333" stroke-width="4"><line x1="34" y1="40" x2="48" y2="40"/><line x1="34" y1="70" x2="48" y2="70"/><line x1="34" y1="100" x2="48" y2="100"/></g></g>`);
+  const IMG_FOOD = svg(`<rect width="400" height="400" fill="#fbe1dc"/>
+    <rect x="30" y="60" width="340" height="18" fill="#bbb"/><rect x="30" y="230" width="340" height="18" fill="#bbb"/>
+    <rect x="50" y="130" width="140" height="100" rx="10" fill="#fff" stroke="#333" stroke-width="6"/><rect x="62" y="142" width="56" height="76" rx="6" fill="#f4f0e0"/><circle cx="90" cy="180" r="18" fill="#fff" stroke="#ddd" stroke-width="4"/><rect x="126" y="142" width="52" height="34" rx="6" fill="#e7a35a"/><rect x="126" y="182" width="52" height="36" rx="6" fill="#7bbf6a"/>
+    <path d="M225 230 Q225 140 290 140 Q355 140 355 230Z" fill="#e7a35a" stroke="#333" stroke-width="6"/><path d="M255 170 q10 20 0 40 M290 160 q10 25 0 50 M325 170 q10 20 0 40" stroke="#b9743a" stroke-width="6" fill="none"/>
+    <g transform="rotate(-10 150 300)"><rect x="70" y="270" width="160" height="70" rx="10" fill="#ffd54a" stroke="#333" stroke-width="6"/><text x="150" y="318" font-size="34" font-weight="900" text-anchor="middle" font-family="sans-serif" fill="#e0362c">即期 7折</text></g>
+    <rect x="70" y="90" width="80" height="40" rx="6" fill="#fff" stroke="#333" stroke-width="5"/><rect x="250" y="95" width="90" height="35" rx="6" fill="#fff" stroke="#333" stroke-width="5"/>`);
+
+  const EX = {
+    t1:{ img:{photo:IMG_CUP}, d:{
+      title:'帶自己的杯子去買飲料', sub:'手搖飲店推出自備杯優惠，鼓勵少用一次性塑膠杯',
+      ch:'自備環保杯買飲料　多家手搖飲店祭優惠',
+      cb:'為了減少一次性塑膠杯，政府推動「自備杯」政策，許多手搖飲店也配合提供折價。店家表示，自己帶杯子來的客人比以前多，但大多數人還是習慣使用店裡的塑膠杯。環保團體呼籲，可以把環保杯放在書包裡，隨時都能使用。',
+      cs:'○○日報／2026.10.○／生活版（範例）', cap:'自備環保杯，買飲料還能折價',
+      k1:'一次性塑膠杯用完就丟，會製造很多垃圾。', k2:'很多飲料店自備杯有折價，鼓勵大家少用塑膠杯。', k3:'自備杯的人變多了，但還不夠普遍。',
+      th:'我每週大概買兩次飲料，一年下來就用掉一百多個塑膠杯！\n我發現只要把杯子放在書包裡就能做到。\n我的疑問是：杯子沒時間洗怎麼辦？\n我打算先從週末出門帶杯子開始。',
+      nm:'範例：七年三班 0號 王小明' }},
+    t2:{ img:{photo:IMG_SUN}, d:{
+      title:'夏天越來越熱，怎麼辦？', sub:'兩則新聞，看見高溫對健康和校園的影響',
+      c1h:'高溫持續　中暑就醫人數增加', c1b:'今年夏天高溫日數多，醫院中暑、熱衰竭的病人增加。醫師提醒，戶外活動要多喝水、避開中午最熱的時段，頭暈時要立刻到陰涼處休息。', c1s:'○○日報／2026.07.○／健康版（範例）',
+      c2h:'校園添遮陽設施　戶外課調整時間', c2b:'為了讓學生在炎熱天氣下安全上課，有些學校在操場旁增設遮陽棚和飲水機，並把戶外體育課改到早上或傍晚。', c2s:'○○晚報／2026.07.○／教育版（範例）',
+      cap:'夏天中午的操場，熱到沒人想出去',
+      s1:'兩則新聞都和「天氣越來越熱」有關。', s2:'都提到要避開最熱的時段活動。',
+      d1:'新聞①從「健康」來看：中暑的人變多。', d2:'新聞②從「學校」來看：怎麼改善環境。',
+      th:'把兩則新聞放在一起看，我發現高溫不只是「很熱」，還會影響健康和上課方式。我們班的體育課常在中午，我想跟老師建議調整時間，也會提醒同學多喝水。',
+      nm:'範例：七年三班 0號 王小明' }},
+    t3:{ img:{photo:IMG_FOOD}, d:{
+      title:'吃不完的食物去哪了？', sub:'從即期品新聞，看見剩食問題',
+      ch:'即期食品打折賣　減少浪費', cb:'許多超商、超市把快到期的食品打折出售，也有店家和公益團體合作，把沒賣完的麵包、便當送給需要的人。業者表示，這樣可以減少被丟掉的食物。', cs:'○○日報／2026.09.○／消費版（範例）',
+      cap:'冷藏櫃上的即期品優惠標籤',
+      qa:'超商、超市把快到期的食物打折賣，或送給需要的人。',
+      qb:'店家怕不夠賣而多進貨；有些人只挑日期最新的買，所以剩下很多。',
+      qc:'好的：減少浪費，也能幫助別人。\n壞的：丟掉的食物變垃圾，種植和運送的資源也白費了。',
+      qd:'買之前想想吃不吃得完；午餐盛適量；可以優先選即期品。',
+      o1:'我觀察到家裡冰箱常有忘記吃而過期的食物。', o2:'我的疑問是：即期品打折，店家會不會賠錢？', o3:'我認為減少剩食要從自己做起，因為每個人少丟一點，加起來就很多。',
+      nm:'範例：七年三班 0號 王小明' }}
+  };
+
+  function getImg(key){
+    if (exMode){ const [t,slot] = key.split(':'); return (EX[t] && EX[t].img[slot]) || null; }
+    return state.imgs[key];
+  }
+  function renderExample(){
+    const e = EX[state.tpl];
+    $('#'+state.tpl).querySelectorAll('.ed').forEach(el => { el.innerText = e.d[el.dataset.k] || ''; markEmpty(el); });
+    $('#'+state.tpl).querySelectorAll('[data-imgbox]').forEach(paintImg);
+    $('#exName').textContent = '「' + INFO[state.tpl].name + '」';
+  }
+  function setExample(on){
+    exMode = on;
+    document.body.classList.toggle('example', on);
+    $('#exBanner').classList.toggle('on', on);
+    $('#exBtn').textContent = on ? '✏️ 回到我的海報' : '👀 看範例';
+    fields.forEach(el => {
+      el.contentEditable = on ? 'false' : (plainOK ? 'plaintext-only' : 'true');
+      if (!on){ el.innerText = state.data[el.dataset.key] || ''; markEmpty(el); }
+    });
+    if (on) renderExample();
+    document.querySelectorAll('[data-imgbox]').forEach(paintImg);
+    refresh();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  $('#exBtn').addEventListener('click', () => setExample(!exMode));
+  $('#exBack').addEventListener('click', () => setExample(false));
+
+  let tt;
+  function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2600); }
+
+  applyTheme(); applyTpl(); fit();
+  if (document.fonts) document.fonts.ready.then(checkOverflow);
+})();
+</script>
+</body>
+</html>
